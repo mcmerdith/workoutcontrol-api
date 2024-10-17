@@ -10,10 +10,10 @@ import {
 } from "@clerk/nextjs";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
-import { TRPCReactProvider } from "~/trpc/react";
-import { HydrateClient } from "~/trpc/server";
 import { DarkModeToggle, ThemeProvider } from "~/components/theme-provider";
 import { Button } from "~/components/ui/button";
+import { TRPCReactProvider } from "~/trpc/react";
+import { HydrateClient } from "~/trpc/server";
 
 export const metadata: Metadata = {
   title: "Workout Control",
@@ -37,32 +37,40 @@ export default function RootLayout({
               <h1 className="text-2xl font-bold">Workout Control</h1>
             </div>
             <div className="flex flex-row items-center gap-4">
-              <SignedIn>
-                <Button asChild>
-                  <SignOutButton />
-                </Button>
-                <UserButton />
-              </SignedIn>
-              <SignedOut>
-                <Button asChild>
-                  <SignInButton />
-                </Button>
-              </SignedOut>
+              <div
+                id="auth-container"
+                className="flex flex-row items-center gap-4"
+                suppressHydrationWarning
+              >
+                <SignedIn>
+                  <Button asChild>
+                    <SignOutButton />
+                  </Button>
+                  <UserButton />
+                </SignedIn>
+                <SignedOut>
+                  <Button asChild>
+                    <SignInButton />
+                  </Button>
+                </SignedOut>
+              </div>
               <DarkModeToggle />
             </div>
           </nav>
-          <main className="container flex flex-col items-center justify-center gap-6">
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <TRPCReactProvider>
-                <HydrateClient>{children}</HydrateClient>
-              </TRPCReactProvider>
-            </ThemeProvider>
-          </main>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <TRPCReactProvider>
+              <HydrateClient>
+                <main className="container flex flex-auto flex-col items-center justify-start gap-6">
+                  {children}
+                </main>
+              </HydrateClient>
+            </TRPCReactProvider>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

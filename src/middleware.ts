@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isPublic = createRouteMatcher(["/"]);
+// TRPC has it's own middleware
+const isPublic = createRouteMatcher(["/", "/api/trpc(.*)"]);
 
 export default clerkMiddleware((auth, request) => {
   if (!isPublic(request)) {
