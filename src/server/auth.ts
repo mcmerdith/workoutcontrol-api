@@ -3,9 +3,12 @@ import {
   type DefaultSession,
   type NextAuthOptions,
 } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
+import GoogleProvider from "next-auth/providers/google";
+import { EdgeDBAdapter } from "@auth/edgedb-adapter";
 
 import { env } from "~/env";
+import { client } from "./db";
+import e from "@/dbschema/edgeql-js";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -21,11 +24,6 @@ declare module "next-auth" {
       // role: UserRole;
     } & DefaultSession["user"];
   }
-
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
 }
 
 /**
@@ -35,28 +33,31 @@ declare module "next-auth" {
  */
 export const authOptions: NextAuthOptions = {
   callbacks: {
-    session: ({ session, token }) => ({
+    session: async ({ session, user }) => ({
       ...session,
       user: {
         ...session.user,
-        id: token.sub,
+        id: user.id,
+        permission: await e
+          .insert(e.UserPermission, {
+            user: e.select(e.User, (u) => ({
+              filter_single: e.op(u.id, "=", e.uuid(user.id)),
+            })),
+          })
+          .unlessConflict((r) => ({
+            on: r.user,
+            else: r,
+          }))
+          .run(client),
       },
     }),
   },
+  adapter: EdgeDBAdapter(client),
   providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
+    GoogleProvider({
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
   ],
 };
 
